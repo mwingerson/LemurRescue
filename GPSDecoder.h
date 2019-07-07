@@ -38,8 +38,10 @@ using namespace LibSerial;
 struct GGAStruct
 {
 	std::string GGAfixTime;
-	std::string GGAlatitude;
-	std::string GGAlongitude;
+	std::string GGALatitude;
+	std::string GGALongitude;
+	float GGALatitudeNum;
+	float GGALongitudeNum;
 	int gps_fix;
 	int satNum;
 	float horzDOP;
@@ -168,6 +170,11 @@ public:
 	GPSDecoder(std::string);
 	~GPSDecoder();
 
+	void printGGAData();
+	void printGSAData();
+	void printGSVData();
+	void printGLLData();
+	void printRMCData();
 	void readFFFData(char*);
 	void readGGAData(char*);
 	void readGSAData(char*);
