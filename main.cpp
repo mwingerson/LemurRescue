@@ -30,9 +30,9 @@ int main(int argc, char** argv )
     while(GPSWorker.runGPSWorker)
     {
       char c;
-      //std::system("clear");
-      //GPSWorker.printGGAData();
-      usleep(10000); //100ms
+      std::system("clear");
+      GPSWorker.printGGAData();
+      usleep(100000); //100ms
 
       // std::cout << "Enter Menu Option: ";
       // std::cin >> c;
