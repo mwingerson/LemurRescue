@@ -41,16 +41,16 @@ void GPSDecoder::crunchGPSSentence(std::string inputString)
 
 void GPSDecoder::printGGAData()
 {
-		// Fix quality:
-		// 		0 = invalid
-		// 		1 = GPS fix (SPS)
-		// 		2 = DGPS fix
-		// 		3 = PPS fix
-		// 		4 = Real Time Kinematic
-		// 		5 = Float RTK
-		// 		6 = estimated (dead reckoning) (2.3 feature)
-		// 		7 = Manual input mode
-		// 		8 = Simulation mode
+	// Fix quality:
+	// 		0 = invalid
+	// 		1 = GPS fix (SPS)
+	// 		2 = DGPS fix
+	// 		3 = PPS fix
+	// 		4 = Real Time Kinematic
+	// 		5 = Float RTK
+	// 		6 = estimated (dead reckoning) (2.3 feature)
+	// 		7 = Manual input mode
+	// 		8 = Simulation mode
   std::cout << "GGAData--------------------"
 	 	<< "\nfixTime:\t" << GGAData.GGAfixTime
 		<< "\nlatitude:\t" << GGAData.GGALatitudeNum
@@ -61,6 +61,29 @@ void GPSDecoder::printGGAData()
     << "\nAltitude:\t" << GGAData.alt
 		<< "\nHeightOfGeoid:\t" << GGAData.heightOfGeoid
     << std::endl;
+
+		std::ofstream file("GPSOutput.txt", std::ios::app);
+		if(file.is_open())
+		{
+			std::cout << "Opened file successfully" << std::endl;
+			file << "GGAData--------------------"
+			 	<< "\nfixTime:\t" << GGAData.GGAfixTime
+				<< "\nlatitude:\t" << GGAData.GGALatitudeNum
+				<< "\nlongitude:\t" << GGAData.GGALongitudeNum
+				<< "\nGPS fix:\t" << GGAData.gps_fix
+		    << "\nSatelinte num:\t" << GGAData.satNum
+				<< "\nHorzDOP:\t" << GGAData.horzDOP
+		    << "\nAltitude:\t" << GGAData.alt
+				<< "\nHeightOfGeoid:\t" << GGAData.heightOfGeoid
+		    << std::endl;
+
+			file.close();
+		}
+		else
+		{
+			std::cout << "Cannot open file" << std::endl;
+		}
+
 }
 
 void GPSDecoder::printGSAData()

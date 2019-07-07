@@ -34,6 +34,8 @@ int main(int argc, char** argv )
       GPSWorker.printGGAData();
       usleep(100000); //100ms
 
+
+
       // std::cout << "Enter Menu Option: ";
       // std::cin >> c;
       //
