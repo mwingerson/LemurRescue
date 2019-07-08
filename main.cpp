@@ -11,9 +11,10 @@
 
 #include <thread>
 
-using namespace LibSerial;
-//using namespace cv;
+#include <opencv2/highgui.hpp>  // OpenCV window I/O
 
+using namespace LibSerial;
+using namespace cv;
 
 int main(int argc, char** argv )
 {
@@ -29,30 +30,13 @@ int main(int argc, char** argv )
 
     while(GPSWorker.runGPSWorker)
     {
-      char c;
-      std::system("clear");
-      GPSWorker.printGGAData();
-      usleep(100000); //100ms
+      //std::system("clear");
+      //GPSWorker.printGGAData();
+      //usleep(100000); //100ms
 
-
-
-      // std::cout << "Enter Menu Option: ";
-      // std::cin >> c;
-      //
-      // switch (c) {
-      //   case 'a':
-      //     std::system("clear");
-      //     GPSWorker.printGGAData();
-      //     break;
-      //
-      //   case 'q':
-      //     std::cout << "Quitting" << std::endl;
-      //     GPSWorker.runGPSWorker = false;
-      //     break;
-      //
-      //   default:
-      //     std::cout << "Incorrect user input" << std::endl;
-      // }
+      //char c = (char)waitKey(100);
+      // if(c == 27)
+      // break;
     }
 
   	GPSThread.join();

@@ -171,11 +171,15 @@ public:
 	GPSDecoder(std::string);
 	~GPSDecoder();
 
+	int initFiles();
+	void closeFile();
+
 	void printGGAData();
 	void printGSAData();
 	void printGSVData();
 	void printGLLData();
 	void printRMCData();
+	int printKMLData();
 	void readFFFData(char*);
 	void readGGAData(char*);
 	void readGSAData(char*);
@@ -198,7 +202,11 @@ public:
 
 	int iterator = 0;
 	bool runGPSWorker = true;
+	bool file_init = true;
+
 
 private:
+	std::ofstream file;
+
 	SerialStream UARTStream;
 };

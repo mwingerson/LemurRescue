@@ -3,11 +3,57 @@
 GPSDecoder::GPSDecoder(std::string paramInput)
 {
 	initGPS(paramInput);
+	initFiles();
 }
 
 GPSDecoder::~GPSDecoder()
 {
 	UARTStream.Close();
+	this->closeFile();
+}
+
+int GPSDecoder::initFiles()
+{
+	//initialize the KML file
+	std::ofstream file("KMLOutput.txt", std::ios::app);
+	if(file.is_open())
+	{
+		std::cout << "KML file opened successfully" << std::endl;
+			file << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+			<< "<kml xmlns=\"http://www.opengis.net/kml/2.2\" xmlns:gx=\"http://www.google.com/kml/ext/2.2\" xmlns:kml=\"http://www.opengis.net/kml/2.2\" xmlns:atom=\"http://www.w3.org/2005/Atom\">"
+			<< "<Document>" << "<name>SHIBBY</name>"
+			<< "<Style id=\"orange-5px\">"
+			<< "<LineStyle>"
+			<< "<color>ff00aaff</color>"
+			<< "<width>5</width>"
+			<< "</LineStyle>"
+			<< "</Style>"
+			<< "<Placemark>"
+			<< "<name>THIS IS MY NAME</name>"
+			<< "<styleUrl>#orange-5px</styleUrl>"
+			<< "<LineString>"
+			<< "<tessellate>1</tessellate>"
+			<< "<coordinates>"
+			<< std::endl;
+
+			file.close();
+		return 1;
+	}
+	else
+		return 0;
+}
+
+void GPSDecoder::closeFile()
+{
+	std::ofstream file("KMLOutput.txt", std::ios::app);
+	if(file.is_open())
+	{
+		file << "</coordinates>"
+		<< "</LineString>"
+		<< "</Placemark>"
+		<< std::endl;
+		file.close();
+	}
 }
 
 void GPSDecoder::crunchGPSSentence(std::string inputString)
@@ -37,6 +83,26 @@ void GPSDecoder::crunchGPSSentence(std::string inputString)
 		readVTGData(GPSSentence);
   else{}
     //std::cout << "Other message: " << GPSSentenceName << std::endl;
+}
+
+int GPSDecoder::printKMLData()
+{
+	std::ofstream file("KMLOutput.txt", std::ios::app);
+	if(file.is_open())
+	{
+		file << GGAData.GGALatitudeNum << ","
+		<< GGAData.GGALongitudeNum << "," << 0
+		<< std::endl;
+
+		std::cout << "print KML "
+		<< GGAData.GGALatitudeNum << ","
+		<< GGAData.GGALongitudeNum << "," << 0
+		<< std::endl;
+		file.close();
+		return 1;
+	}
+	else
+		return 0;
 }
 
 void GPSDecoder::printGGAData()
@@ -384,12 +450,13 @@ void GPSDecoder::run()
 	{
 		std::string inputString;
 		UARTStream >> inputString;
-
 		if(inputString.length() > 6)
 		{
 			crunchGPSSentence(inputString);
+
+			printKMLData();
 		}
-		usleep(10000);
+		usleep(1000);
 	}
 
 }
