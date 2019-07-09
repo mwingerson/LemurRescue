@@ -1,15 +1,41 @@
 #include "GPSDecoder.h"
 
-GPSDecoder::GPSDecoder(std::string paramInput)
-{
-	initGPS(paramInput);
-	initFiles();
-}
+GPSDecoder::GPSDecoder(){ }
 
 GPSDecoder::~GPSDecoder()
 {
 	UARTStream.Close();
 	this->closeFile();
+}
+
+int GPSDecoder::initDecoder(std::string paramInput)
+{
+	int ret = 0;
+	ret = initGPS(paramInput);
+	ret += initFiles();
+	if(ret)
+		return 1;
+	else
+		return 0;
+
+}
+
+int GPSDecoder::initGPS(std::string paramInput)
+{
+	//start
+	std::cout << "Initializing GPS on: " << paramInput << std::endl;
+
+	UARTStream.Open(paramInput);
+	UARTStream.SetBaudRate(SerialStreamBuf::BAUD_38400);
+
+	if(UARTStream.IsOpen()) {
+		//std::cout << "Serial Port Opened" << std::endl;
+		return 0;
+	}
+	else {
+		//std::cout << "Port not opened" << std::endl;
+		return 1;
+	}
 }
 
 int GPSDecoder::initFiles()
@@ -30,7 +56,7 @@ int GPSDecoder::initFiles()
 					<< "\t\t\t<LineStyle><color>ff0000ff</color><width>8</width></LineStyle>\n"
 					<< "\t\t</Style>\n"
 					<< "\t\t\t<Placemark>\n"
-					<< "\t\t\t\t<name>Line 5</name>\n"
+					<< "\t\t\t\t<name>Placemark Name</name>\n"
 					<< "\t\t\t\t<styleUrl>#test_line</styleUrl>\n"
 					<< "\t\t\t\t<LineString>\n"
 					<< "\t\t\t\t\t<tessellate>1</tessellate>\n"
@@ -428,25 +454,6 @@ void GPSDecoder::readVTGData(char* sentence)
     VTGData.VTGGndSpdkmph = token;
 
 }
-
-int GPSDecoder::initGPS(std::string paramInput)
-{
-	//start
-	std::cout << "Initializing GPS on: " << paramInput << std::endl;
-
-	UARTStream.Open(paramInput);
-	UARTStream.SetBaudRate(SerialStreamBuf::BAUD_38400);
-
-	if(UARTStream.IsOpen()) {
-		//std::cout << "Serial Port Opened" << std::endl;
-		return 1;
-	}
-	else {
-		//std::cout << "Port not opened" << std::endl;
-		return 0;
-	}
-}
-
 void GPSDecoder::run()
 {
 	std::string inputString;
@@ -460,7 +467,7 @@ void GPSDecoder::run()
 
 			printKMLData();
 		}
-		usleep(1000);
+		usleep(100);
 	}
 
 }

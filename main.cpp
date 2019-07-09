@@ -23,7 +23,8 @@ int main(int argc, char** argv )
 
     std::string paramInput = "/dev/ttyACM0";
 
-    GPSDecoder GPSWorker(paramInput);
+    GPSDecoder GPSWorker;
+    GPSWorker.initDecoder(paramInput);
 
     std::thread GPSThread(&GPSDecoder::run, &GPSWorker);
     std::cout << "Search and Rescue Menu V0.1" << std::endl;
@@ -36,7 +37,7 @@ int main(int argc, char** argv )
       namedWindow("Display Image", WINDOW_AUTOSIZE );
 
      char c = (char)waitKey(100);
-
+//     std::cout << "Before if" << std::endl;
      if(c == 27)
        GPSWorker.runGPSWorker = false;
     }

@@ -168,9 +168,11 @@ struct VTGStruct
 class GPSDecoder
 {
 public:
-	GPSDecoder(std::string);
+	GPSDecoder();
 	~GPSDecoder();
 
+	int initDecoder(std::string);
+	int initGPS(std::string);
 	int initFiles();
 	void closeFile();
 
@@ -191,7 +193,6 @@ public:
 	void crunchGPSSentence(std::string);
 
 	void run();
-	int initGPS(std::string);
 
 	GGAStruct GGAData;
 	GSAStruct GSAData;
