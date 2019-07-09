@@ -15,28 +15,43 @@ GPSDecoder::~GPSDecoder()
 int GPSDecoder::initFiles()
 {
 	//initialize the KML file
-	std::ofstream file("KMLOutput.txt", std::ios::app);
+	file.open("KMLOutput.kml", std::ios::out);\
 	if(file.is_open())
 	{
-		std::cout << "KML file opened successfully" << std::endl;
-			file << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-			<< "<kml xmlns=\"http://www.opengis.net/kml/2.2\" xmlns:gx=\"http://www.google.com/kml/ext/2.2\" xmlns:kml=\"http://www.opengis.net/kml/2.2\" xmlns:atom=\"http://www.w3.org/2005/Atom\">"
-			<< "<Document>" << "<name>SHIBBY</name>"
-			<< "<Style id=\"orange-5px\">"
-			<< "<LineStyle>"
-			<< "<color>ff00aaff</color>"
-			<< "<width>5</width>"
-			<< "</LineStyle>"
-			<< "</Style>"
-			<< "<Placemark>"
-			<< "<name>THIS IS MY NAME</name>"
-			<< "<styleUrl>#orange-5px</styleUrl>"
-			<< "<LineString>"
-			<< "<tessellate>1</tessellate>"
-			<< "<coordinates>"
-			<< std::endl;
+		file 	<< "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+					<< "<kml xmlns=\"http://www.opengis.net/kml/2.2\">\n"
+					<< "\t<Document>\n"
+					<< "\t\t<name>testing kml</name>\n"
+					<< "\t\t<description/>\n"
+					<< "\t\t\t<Placemark>\n"
+					<< "\t\t\t\t<name>Line 5</name>\n"
+					<< "\t\t\t\t<styleUrl>#line-000000-1200-nodesc</styleUrl>\n"
+					<< "\t\t\t\t<LineString>\n"
+					<< "\t\t\t\t\t<tessellate>1</tessellate>\n"
+					<< "\t\t\t\t\t<coordinates>\n";
 
-			file.close();
+		file.close();
+		return 1;
+	}
+	else
+		return 0;
+}
+
+int GPSDecoder::printKMLData()
+{
+	file.open("KMLOutput.kml", std::ios::app);
+	if(file.is_open())
+	{
+		file << "\t\t\t\t\t\t"
+		<< GGAData.GGALongitudeNum << ","
+		<< GGAData.GGALatitudeNum << "," << 0
+		<< "\n";
+
+		// std::cout << "print KML "
+		// << GGAData.GGALongitudeNum << ","
+		// << GGAData.GGALatitudeNum << "," << 0
+		// << std::endl;
+		file.close();
 		return 1;
 	}
 	else
@@ -45,13 +60,15 @@ int GPSDecoder::initFiles()
 
 void GPSDecoder::closeFile()
 {
-	std::ofstream file("KMLOutput.txt", std::ios::app);
+	file.open("KMLOutput.kml", std::ios::app);
 	if(file.is_open())
 	{
-		file << "</coordinates>"
-		<< "</LineString>"
-		<< "</Placemark>"
-		<< std::endl;
+		file 	<< "\t\t\t\t\t</coordinates>\n"
+					<< "\t\t\t\t</LineString>\n"
+					<< "\t\t\t</Placemark>\n"
+					<< "\t</Document>\n"
+					<< "</kml>"
+					<< std::endl;
 		file.close();
 	}
 }
@@ -83,26 +100,6 @@ void GPSDecoder::crunchGPSSentence(std::string inputString)
 		readVTGData(GPSSentence);
   else{}
     //std::cout << "Other message: " << GPSSentenceName << std::endl;
-}
-
-int GPSDecoder::printKMLData()
-{
-	std::ofstream file("KMLOutput.txt", std::ios::app);
-	if(file.is_open())
-	{
-		file << GGAData.GGALatitudeNum << ","
-		<< GGAData.GGALongitudeNum << "," << 0
-		<< std::endl;
-
-		std::cout << "print KML "
-		<< GGAData.GGALatitudeNum << ","
-		<< GGAData.GGALongitudeNum << "," << 0
-		<< std::endl;
-		file.close();
-		return 1;
-	}
-	else
-		return 0;
 }
 
 void GPSDecoder::printGGAData()
@@ -446,9 +443,10 @@ int GPSDecoder::initGPS(std::string paramInput)
 
 void GPSDecoder::run()
 {
+	std::string inputString;
+
 	while(runGPSWorker)
 	{
-		std::string inputString;
 		UARTStream >> inputString;
 		if(inputString.length() > 6)
 		{

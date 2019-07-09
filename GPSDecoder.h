@@ -203,10 +203,11 @@ public:
 	int iterator = 0;
 	bool runGPSWorker = true;
 	bool file_init = true;
+	bool cleared_buffer=false;
 
 
 private:
 	std::ofstream file;
 
-	SerialStream UARTStream;
+		SerialStream UARTStream;
 };
