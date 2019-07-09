@@ -7,6 +7,9 @@
 #include <vector>
 #include <SerialStream.h>
 
+
+#include <iomanip>
+
 using namespace LibSerial;
 
 // GGA - essential fix data which provide 3D location and accuracy data.

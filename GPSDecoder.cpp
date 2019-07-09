@@ -72,8 +72,10 @@ int GPSDecoder::initFiles()
 int GPSDecoder::printKMLData()
 {
 	file.open("KMLOutput.kml", std::ios::app);
-	if(file.is_open())
+	if(file.is_open() && ((GGAData.gps_fix == 1) || (GGAData.gps_fix == 2)))
 	{
+		file.precision(10);
+
 		file << "\t\t\t\t\t\t"
 		<< GGAData.GGALongitudeNum << ","
 		<< GGAData.GGALatitudeNum << "," << 0
@@ -234,7 +236,7 @@ void GPSDecoder::readGGAData(char* sentence)
 	std::string tempStr;
 	int latlonglength;
 	//std::cout << "sentence: " << sentence << std::endl;
-
+	float tempFlt;
 	token = std::strtok(sentence, ",");
   token = std::strtok(NULL, ",");
   GGAData.GGAfixTime = token;
@@ -246,8 +248,13 @@ void GPSDecoder::readGGAData(char* sentence)
 	std::string GPSdegrees = GGAData.GGALatitude.substr(0,latlonglength-8);
 	std::string GPSMinutes = GGAData.GGALatitude.substr(latlonglength-8,8);
 
-	GGAData.GGALatitudeNum = atof(GPSdegrees.c_str());
-	GGAData.GGALatitudeNum += (atof(GPSMinutes.c_str())/60.0);
+	tempFlt = atof(GPSdegrees.c_str());
+	GGAData.GGALatitudeNum = (float)tempFlt;
+	std::cout.precision(10);
+
+	tempFlt = (atof(GPSMinutes.c_str())/60.000000);
+	GGAData.GGALatitudeNum += tempFlt;
+
 	token = std::strtok(NULL, ",");
 	if(strcmp(token, "S") == 0)
 		GGAData.GGALatitudeNum *= -1;
@@ -255,7 +262,7 @@ void GPSDecoder::readGGAData(char* sentence)
 	// std::cout << "GGALatitude: " << GGAData.GGALatitude << std::endl;
 	// std::cout << "GPSdegrees: "<< GPSdegrees <<std::endl;
 	// std::cout << "GPSminutes: "<< GPSMinutes <<std::endl;
-	//std::cout << "GGALatitudeNum: " << GGAData.GGALatitudeNum << std::endl;
+	// std::cout << "GGALatitudeNum: " << GGAData.GGALatitudeNum << std::endl;
 
   GGAData.GGALongitude = std::strtok(NULL, ",");
 	latlonglength = GGAData.GGALongitude.length();
@@ -264,7 +271,7 @@ void GPSDecoder::readGGAData(char* sentence)
 	GPSMinutes = GGAData.GGALongitude.substr(latlonglength-8,8);
 
 	GGAData.GGALongitudeNum = atof(GPSdegrees.c_str());
-	GGAData.GGALongitudeNum += (atof(GPSMinutes.c_str())/60.0);
+	GGAData.GGALongitudeNum += (atof(GPSMinutes.c_str())/60.000000);
 	token = std::strtok(NULL, ",");
 	if(strcmp(token, "W") == 0)
 		GGAData.GGALongitudeNum *= -1;
@@ -272,7 +279,7 @@ void GPSDecoder::readGGAData(char* sentence)
 	// std::cout << "longitude: " << GGAData.GGALongitude << std::endl;
 	// std::cout << "GPSdegrees: "<< GPSdegrees <<std::endl;
 	// std::cout << "GPSminutes: "<< GPSMinutes <<std::endl;
-	//std::cout << "GGALongitudeNum: " << GGAData.GGALongitudeNum << std::endl;
+	// std::cout << "GGALongitudeNum: " << GGAData.GGALongitudeNum << std::endl;
 
   token = std::strtok(NULL, ",");
   //std::cout << "gps_fix: " << token << std::endl;
@@ -465,9 +472,12 @@ void GPSDecoder::run()
 		{
 			crunchGPSSentence(inputString);
 
-			printKMLData();
+			if(!printKMLData())
+			{
+				//std::cout << "ERROR" << std::endl;
+			}
 		}
-		usleep(100);
+		usleep(50);
 	}
 
 }
