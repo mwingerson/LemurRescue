@@ -24,6 +24,7 @@ int main(int argc, char** argv )
     std::string paramInput = "/dev/ttyACM0";
 
     GPSDecoder GPSWorker(paramInput);
+
     std::thread GPSThread(&GPSDecoder::run, &GPSWorker);
     std::cout << "Search and Rescue Menu V0.1" << std::endl;
 
