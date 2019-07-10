@@ -178,6 +178,7 @@ public:
 	int initGPS(std::string);
 	int initFiles();
 	void closeFile();
+	void stopGPS();
 
 	void printGGAData();
 	void printGSAData();
@@ -208,6 +209,7 @@ public:
 	bool runGPSWorker = true;
 	bool file_init = true;
 	bool cleared_buffer=false;
+	bool GPSClosed = false;
 
 
 private:

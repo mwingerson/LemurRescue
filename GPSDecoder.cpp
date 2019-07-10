@@ -2,10 +2,13 @@
 
 GPSDecoder::GPSDecoder(){ }
 
-GPSDecoder::~GPSDecoder()
+GPSDecoder::~GPSDecoder(){ }
+
+void GPSDecoder::stopGPS()
 {
-	UARTStream.Close();
-	this->closeFile();
+		UARTStream.Close();
+		closeFile();
+		GPSClosed = true;
 }
 
 int GPSDecoder::initDecoder(std::string paramInput)
@@ -112,6 +115,7 @@ void GPSDecoder::crunchGPSSentence(std::string inputString)
 	//get GPS senetence name
 	std::string GPSSentenceName = inputString.substr(3,3);
 
+	std::cout << "GPSSentName: " << GPSSentenceName << std::endl;
 	//Make copy of inputstring in a char array
 	char* GPSSentence = new char[inputString.length()];
 	for(int i=0; i<inputString.length();i++)
@@ -162,7 +166,7 @@ void GPSDecoder::printGGAData()
 		std::ofstream file("GPSOutput.txt", std::ios::app);
 		if(file.is_open())
 		{
-			std::cout << "Opened file successfully" << std::endl;
+			//std::cout << "Opened file successfully" << std::endl;
 			file << "GGAData--------------------"
 			 	<< "\nfixTime:\t" << GGAData.GGAfixTime
 				<< "\nlatitude:\t" << GGAData.GGALatitudeNum
@@ -356,7 +360,7 @@ void GPSDecoder::readGSVData(char* sentence)
 	token = std::strtok(NULL, ",");
 	//std::cout << "VDOP: " << token << std::endl;
 	GSVData.azimuth = atoi(token);
-
+	//std::cout << "End of readGSVData()" << std::endl;
 }
 
 void GPSDecoder::readGLLData(char* sentence)
@@ -467,17 +471,13 @@ void GPSDecoder::run()
 
 	while(runGPSWorker)
 	{
+		//std::cout << "Before UART stream" << std::endl;
 		UARTStream >> inputString;
-		if(inputString.length() > 6)
+		//std::cout << "after UART stream" << std::endl;
+		if(inputString.length() > 7)
 		{
 			crunchGPSSentence(inputString);
-
-			if(!printKMLData())
-			{
-				//std::cout << "ERROR" << std::endl;
-			}
+			if(!printKMLData()) { }
 		}
-		usleep(50);
 	}
-
 }
