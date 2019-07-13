@@ -1,50 +1,44 @@
 #include "GPSDecoder.h"
 
-GPSDecoder::GPSDecoder(){ }
+GPSDecoder::GPSDecoder(std::string UARTStr)
+{
+	for(int i = 0; i<12; i++)
+		GSAData.PRN.push_back(0);
+}
 
-GPSDecoder::~GPSDecoder(){ }
-
-void GPSDecoder::stopGPS()
+GPSDecoder::~GPSDecoder()
 {
 		UARTStream.Close();
 		closeFile();
-		GPSClosed = true;
 }
 
-int GPSDecoder::initDecoder(std::string paramInput)
+int GPSDecoder::initDecoder()
 {
 	int ret = 0;
-	ret = initGPS(paramInput);
-	ret += initFiles();
-	if(ret)
+	ret = initFiles();
+	ret += initGPS();
+	if(ret == 2)
 		return 1;
 	else
 		return 0;
-
 }
 
-int GPSDecoder::initGPS(std::string paramInput)
+int GPSDecoder::initGPS()
 {
-	//start
-	std::cout << "Initializing GPS on: " << paramInput << std::endl;
 
-	UARTStream.Open(paramInput);
+	UARTStream.Open(UARTStr);
 	UARTStream.SetBaudRate(SerialStreamBuf::BAUD_38400);
 
-	if(UARTStream.IsOpen()) {
-		//std::cout << "Serial Port Opened" << std::endl;
-		return 0;
-	}
-	else {
-		//std::cout << "Port not opened" << std::endl;
+	if(UARTStream.IsOpen())
 		return 1;
-	}
+	else
+		return 0;
 }
 
 int GPSDecoder::initFiles()
 {
 	//initialize the KML file
-	file.open("KMLOutput.kml", std::ios::out);\
+	file.open(this->KMLOutputStr, std::ios::out);
 	if(file.is_open())
 	{
 		file 	<< "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
@@ -63,18 +57,25 @@ int GPSDecoder::initFiles()
 					<< "\t\t\t\t<styleUrl>#test_line</styleUrl>\n"
 					<< "\t\t\t\t<LineString>\n"
 					<< "\t\t\t\t\t<tessellate>1</tessellate>\n"
-					<< "\t\t\t\t\t<coordinates>\n";
+					<< "\t\t\t\t\t<coordinates>"<< std::endl;
 
 		file.close();
 		return 1;
 	}
-	else
-		return 0;
+	return 0;
 }
 
-int GPSDecoder::printKMLData()
+void GPSDecoder::printKMLtoConsole()
 {
-	file.open("KMLOutput.kml", std::ios::app);
+	std::cout << "print KML "
+	<< GGAData.GGALongitudeNum << ","
+	<< GGAData.GGALatitudeNum << "," << 0
+	<< std::endl;
+}
+
+int GPSDecoder::printKMLtoFile()
+{
+	file.open(this->KMLOutputStr, std::ios::app);
 	if(file.is_open() && ((GGAData.gps_fix == 1) || (GGAData.gps_fix == 2)))
 	{
 		file.precision(10);
@@ -82,13 +83,10 @@ int GPSDecoder::printKMLData()
 		file << "\t\t\t\t\t\t"
 		<< GGAData.GGALongitudeNum << ","
 		<< GGAData.GGALatitudeNum << "," << 0
-		<< "\n";
+		<< std::endl;
 
-		// std::cout << "print KML "
-		// << GGAData.GGALongitudeNum << ","
-		// << GGAData.GGALatitudeNum << "," << 0
-		// << std::endl;
 		file.close();
+
 		return 1;
 	}
 	else
@@ -97,7 +95,7 @@ int GPSDecoder::printKMLData()
 
 void GPSDecoder::closeFile()
 {
-	file.open("KMLOutput.kml", std::ios::app);
+	file.open(this->KMLOutputStr, std::ios::app);
 	if(file.is_open())
 	{
 		file 	<< "\t\t\t\t\t</coordinates>\n"
@@ -115,127 +113,39 @@ void GPSDecoder::crunchGPSSentence(std::string inputString)
 	//get GPS senetence name
 	std::string GPSSentenceName = inputString.substr(3,3);
 
-	std::cout << "GPSSentName: " << GPSSentenceName << std::endl;
 	//Make copy of inputstring in a char array
-	char* GPSSentence = new char[inputString.length()];
-	for(int i=0; i<inputString.length();i++)
+	char* GPSSentence = new char[inputString.length()+1];
+	for(int i = 0; i<inputString.length(); i++)
+		GPSSentence[i] = 0;
+
+	for(int i=0; i<inputString.length();i++){
 		GPSSentence[i]=inputString[i];
-	GPSSentence[inputString.length()] = '\0';
+	}
+	GPSSentence[inputString.length()] = 0;
 
-  if(GPSSentenceName.compare("GGA")==0)
+  if(!GPSSentenceName.compare("GGA"))
     readGGAData(GPSSentence);
-  else if(GPSSentenceName.compare("GSA")==0)
-    readGSAData(GPSSentence);
-  else if(GPSSentenceName.compare("GSV")==0)
-		readGSVData(GPSSentence);
-  else if(GPSSentenceName.compare("GLL")==0)
+  else if(!GPSSentenceName.compare("GSA"))
+  	readGSAData(GPSSentence);
+  else if(!GPSSentenceName.compare("GSV"))
+	 	readGSVData(GPSSentence);
+  else if(!GPSSentenceName.compare("GLL"))
 		readGLLData(GPSSentence);
-  else if(GPSSentenceName.compare("RMC")==0)
-    readRMCData(GPSSentence);
-  else if(GPSSentenceName.compare("TXT")==0)
+  else if(!GPSSentenceName.compare("RMC"))
+  	readRMCData(GPSSentence);
+  else if(!GPSSentenceName.compare("TXT"))
 		readTXTData(GPSSentence);
-  else if(GPSSentenceName.compare("VTG")==0)
+  else if(!GPSSentenceName.compare("VTG"))
 		readVTGData(GPSSentence);
-  else{}
-    //std::cout << "Other message: " << GPSSentenceName << std::endl;
+  else;
+//    std::cout << "Other message: " << GPSSentenceName << std::endl;
+
+	delete GPSSentence;
 }
 
-void GPSDecoder::printGGAData()
+int GPSDecoder::readGGAData(char* sentence)
 {
-	// Fix quality:
-	// 		0 = invalid
-	// 		1 = GPS fix (SPS)
-	// 		2 = DGPS fix
-	// 		3 = PPS fix
-	// 		4 = Real Time Kinematic
-	// 		5 = Float RTK
-	// 		6 = estimated (dead reckoning) (2.3 feature)
-	// 		7 = Manual input mode
-	// 		8 = Simulation mode
-  std::cout << "GGAData--------------------"
-	 	<< "\nfixTime:\t" << GGAData.GGAfixTime
-		<< "\nlatitude:\t" << GGAData.GGALatitudeNum
-		<< "\nlongitude:\t" << GGAData.GGALongitudeNum
-		<< "\nGPS fix:\t" << GGAData.gps_fix
-    << "\nSatelinte num:\t" << GGAData.satNum
-		<< "\nHorzDOP:\t" << GGAData.horzDOP
-    << "\nAltitude:\t" << GGAData.alt
-		<< "\nHeightOfGeoid:\t" << GGAData.heightOfGeoid
-    << std::endl;
-
-		std::ofstream file("GPSOutput.txt", std::ios::app);
-		if(file.is_open())
-		{
-			//std::cout << "Opened file successfully" << std::endl;
-			file << "GGAData--------------------"
-			 	<< "\nfixTime:\t" << GGAData.GGAfixTime
-				<< "\nlatitude:\t" << GGAData.GGALatitudeNum
-				<< "\nlongitude:\t" << GGAData.GGALongitudeNum
-				<< "\nGPS fix:\t" << GGAData.gps_fix
-		    << "\nSatelinte num:\t" << GGAData.satNum
-				<< "\nHorzDOP:\t" << GGAData.horzDOP
-		    << "\nAltitude:\t" << GGAData.alt
-				<< "\nHeightOfGeoid:\t" << GGAData.heightOfGeoid
-		    << std::endl;
-
-			file.close();
-		}
-		else
-		{
-			std::cout << "Cannot open file" << std::endl;
-		}
-
-}
-
-void GPSDecoder::printGSAData()
-{
-	std::cout << "GSAData--------------------"
-		<< "\nautoSelect: " << GSAData.autoSelect
-		<< "\nfixTime: "<< GSAData.GPSFix
-		<< "\nPDOP: " << GSAData.PDOP
-		<< "\nHDOP: "<< GSAData.HDOP
-		<< "\nVDOP: " << GSAData.VDOP
-		<< std::endl;
-}
-
-void GPSDecoder::printGSVData()
-{
-
-	std::cout << "GSVData--------------------"
-						<< "\nFullDataSentNum: " 	<< GSVData.fullDataSentNum
-						<< "\nsentence: "					<< GSVData.sentence
-						<< "\nsateliteInView: " 	<< GSVData.sateliteInView
-						<< "\nsatPRNNum: " 				<< GSVData.satPRNNum
-						<< "\nelevation: " 				<< GSVData.elevation
-						<< "\nazimuth: " 					<< GSVData.azimuth
-						<< std::endl;
-}
-
-void GPSDecoder::printGLLData()
-{
-	std::cout << "GLLData--------------------"
-						<< "\nGLLLatitude: " 			<< GLLData.GLLLatitude
-						<< "\nGLLLongitude: "			<< GLLData.GLLLongitude
-						<< "\nGLLfixTakenAt: "		<< GLLData.GLLfixTakenAt
-						<< "\ndataActive: "				<< GLLData.dataActive
-						<< std::endl;
-}
-
-void GPSDecoder::printRMCData()
-{
-	std::cout << "RMCData--------------------"
-						<< "\nRMCFixTaken: " 			<< RMCData.RMCFixTaken
-						<< "\nRMCStatus: "			<< RMCData.RMCStatus
-						<< "\nRMCLatitude: "		<< RMCData.RMCLatitude
-						<< "\nRMCLongitude: "			<< RMCData.RMCLongitude
-						<< "\nRMCGNDSpeed: "			<< RMCData.RMCGNDSpeed
-						<< "\nRMCTrackAngle: "			<< RMCData.RMCTrackAngle
-						<< "\nRMCMagneticVar: "			<< RMCData.RMCMagneticVar
-						<< std::endl;
-}
-
-void GPSDecoder::readGGAData(char* sentence)
-{
+	//std::cout << "readGGAData: " << sentence << std::endl;
   char* token;
 	std::string tempStr;
 	int latlonglength;
@@ -245,12 +155,24 @@ void GPSDecoder::readGGAData(char* sentence)
   token = std::strtok(NULL, ",");
   GGAData.GGAfixTime = token;
 
+	//std::cout << "GGAData.GGAfixTime: " << GGAData.GGAfixTime << std::endl;
+
 	//Computing GGAData.Latitude
   GGAData.GGALatitude = std::strtok(NULL, ",");
 	latlonglength = GGAData.GGALatitude.length();
 
-	std::string GPSdegrees = GGAData.GGALatitude.substr(0,latlonglength-8);
-	std::string GPSMinutes = GGAData.GGALatitude.substr(latlonglength-8,8);
+
+	//std::cout << "GGAData.GGALatitude: "  << std::endl;
+
+	if(!strcmp(GGAData.GGALatitude.c_str(), "0"))
+	{
+		std::cout << "No data in GGA" << std::endl;
+		return 1;
+	}
+		std::string GPSdegrees = GGAData.GGALatitude.substr(0,latlonglength-8);
+		std::string GPSMinutes = GGAData.GGALatitude.substr(latlonglength-8,8);
+
+		//std::cout << "GGAData.GGALatitude: " << GGAData.GGALatitude << std::endl;
 
 	tempFlt = atof(GPSdegrees.c_str());
 	GGAData.GGALatitudeNum = (float)tempFlt;
@@ -310,85 +232,112 @@ void GPSDecoder::readGGAData(char* sentence)
 
 void GPSDecoder::readGSAData(char* sentence)
 {
+
+	char moddedSentence[100];
+	char* moddedPtr = moddedSentence;
+	char* sentPtr = sentence;
+
+	while(*sentPtr != 0)
+	{
+		*moddedPtr++ = *sentPtr;
+		if((sentPtr[0] == ',') && (sentPtr[1] == ',')){
+			*moddedPtr++ = '0';
+		}
+		sentPtr++;
+	}
+	*moddedPtr == 0;
+
 	//Start toking
-	char* token = std::strtok(sentence, ",");
-	//std::cout << "preambl: " << token << std::endl;
+	// std::cout << "moddedSentence: " << moddedSentence << std::endl;
+	// std::cout << "Sentence:       " << sentence << std::endl;
+	char* token = std::strtok(moddedSentence, ",");
+	// std::cout << "preambl: " << token << std::endl;
 
 	token = std::strtok(NULL, ",");
-	//std::cout << "autoSelect: " << token << std::endl;
+	// std::cout << "autoSelect: " << token << std::endl;
 	GSAData.autoSelect = token;
 
 	token = std::strtok(NULL, ",");
-	//std::cout << "fixTime: " << token << std::endl;
+	// std::cout << "fixTime: " << token << std::endl;
 	GSAData.GPSFix = atof(token);
 
+	for(int i=0; i< 12; i++)
+	{
+		token = std::strtok(NULL, ",");
+		//std::cout << "PRN[" << i << "]" << token << std::endl;
+		GSAData.PRN[i] = atoi(token);
+	}
+
 	token = std::strtok(NULL, ",");
-	//std::cout << "PDOP: " << token << std::endl;
+	// std::cout << "PDOP: " << token << std::endl;
 	GSAData.PDOP = atof(token);
 
 	token = std::strtok(NULL, ",");
-	//std::cout << "HDOP: " << token << std::endl;
+	// std::cout << "HDOP: " << token << std::endl;
 	GSAData.HDOP = atof(token);
 
 	token = std::strtok(NULL, ",");
-	//std::cout << "VDOP: " << token << std::endl;
+	// std::cout << "VDOP: " << token << std::endl;
 	GSAData.VDOP = atof(token);
 }
 
 void GPSDecoder::readGSVData(char* sentence)
 {
+	//std::cout << "starting readGSVData: " << std::endl;
 	//Start toking
 	char* token = std::strtok(sentence, ",");
 	//std::cout << "preambl: " << token << std::endl;
 
 	token = std::strtok(NULL, ",");
-	//std::cout << "autoSelect: " << token << std::endl;
+	//std::cout << "fullDataSentNum: " << token << std::endl;
 	GSVData.fullDataSentNum = atoi(token);
 
 	token = std::strtok(NULL, ",");
-	//std::cout << "fixTime: " << token << std::endl;
+	//std::cout << "sentence: " << token << std::endl;
 	GSVData.sentence = atoi(token);
 
 	token = std::strtok(NULL, ",");
-	//std::cout << "PDOP: " << token << std::endl;
+	//std::cout << "sateliteInView: " << token << std::endl;
 	GSVData.sateliteInView = atoi(token);
 
 	token = std::strtok(NULL, ",");
-	//std::cout << "HDOP: " << token << std::endl;
+	//std::cout << "satPRNNum: " << token << std::endl;
 	GSVData.satPRNNum = atoi(token);
 
 	token = std::strtok(NULL, ",");
-	//std::cout << "VDOP: " << token << std::endl;
+	//std::cout << "azimuth: " << token << std::endl;
 	GSVData.azimuth = atoi(token);
 	//std::cout << "End of readGSVData()" << std::endl;
 }
 
 void GPSDecoder::readGLLData(char* sentence)
 {
+	//std::cout << "In readGLLData: " << sentence << std::endl;
 	//Start toking
 	char* token = std::strtok(sentence, ",");
 	//std::cout << "preambl: " << token << std::endl;
 
 	token = std::strtok(NULL, ",");
-	//std::cout << "autoSelect: " << token << std::endl;
+	//std::cout << "GLLLatitude: " << token << std::endl;
 	GLLData.GLLLatitude = token;
+
 	token = std::strtok(NULL, ",");
 	GLLData.GLLLatitude.append(" ");
 	GLLData.GLLLatitude.append(token);
 
 	token = std::strtok(NULL, ",");
-	//std::cout << "fixTime: " << token << std::endl;
+	//std::cout << "GLLLongitude: " << token << std::endl;
 	GLLData.GLLLongitude = token;
 	token = std::strtok(NULL, ",");
 	GLLData.GLLLongitude.append(" ");
 	GLLData.GLLLongitude.append(token);
 
 	token = std::strtok(NULL, ",");
-	//std::cout << "PDOP: " << token << std::endl;
+	//std::cout << "GLLfixTakenAt: " << token << std::endl;
 	GLLData.GLLfixTakenAt = token;
 
 	token = std::strtok(NULL, ",");
-	//std::cout << "VDOP: " << token << std::endl;
+	//std::cout << "dataActive: " << token << std::endl;
 	GLLData.dataActive = token;
 
 }
@@ -431,14 +380,14 @@ void GPSDecoder::readRMCData(char* sentence)
 		RMCData.RMCTrackAngle = token;
 
 		token = std::strtok(NULL, ",");
-		//std::cout << "fixTime: " << token << std::endl;
-		RMCData.RMCMagneticVar = token;
+		// std::cout << "RMCMagneticVar[0]: " << token[0] << std::endl;
+		RMCData.RMCMagneticVar = token[0];
+		// std::cout << "RMCMagneticVar:    " << RMCData.RMCMagneticVar << std::endl;
 }
 
 void GPSDecoder::readTXTData(char* sentence)
 {
-	//start
-  //std::cout << "TXT: " << sentence << std::endl;
+	TXTData.textVector.push_back(sentence);
 }
 
 void GPSDecoder::readVTGData(char* sentence)
@@ -465,19 +414,194 @@ void GPSDecoder::readVTGData(char* sentence)
     VTGData.VTGGndSpdkmph = token;
 
 }
+
+int static hex2int(char c)
+{
+    if (c >= '0' && c <= '9')
+        return c - '0';
+    if (c >= 'A' && c <= 'F')
+        return c - 'A' + 10;
+    if (c >= 'a' && c <= 'f')
+        return c - 'a' + 10;
+    return -1;
+}
+
+int GPSDecoder::GPSSentenceCheck(std::string sent)
+{
+	if(sent[0] != '$')
+	{
+		//FAIL
+		return 1;
+	}
+
+
+	if((sent.length() > 83)||(sent.length() < 6))
+	{
+		//std::cout << "GPS too long/short" << std::endl;
+		//std::cout << "sentence: " << sent << std::endl;
+		//FAIL
+		return 1;
+	}
+
+	char checksum = 0;
+	auto it=sent.begin();
+	it++;
+	for(;(*it!='*')&&(*it!=' ')&&(*it!=0);++it)
+	{
+		checksum ^= *it;
+	}
+
+	it++;
+
+	unsigned int cs = (16*hex2int(*it));
+	it++;
+	cs += hex2int(*it);
+
+	//checksum failed
+	if(checksum != cs)
+	{
+		std::cout << "Did not pass checksum" << std::endl;
+		return 1;
+	}
+
+	return 0;
+}
+
 void GPSDecoder::run()
 {
-	std::string inputString;
 
 	while(runGPSWorker)
 	{
-		//std::cout << "Before UART stream" << std::endl;
+		std::string inputString;
 		UARTStream >> inputString;
-		//std::cout << "after UART stream" << std::endl;
-		if(inputString.length() > 7)
+
+		if(!GPSSentenceCheck(inputString))
 		{
-			crunchGPSSentence(inputString);
-			if(!printKMLData()) { }
+		 	crunchGPSSentence(inputString);
+			if(!printKMLtoFile())
+			{
+				std::cout << "printKMLData Failed: " << inputString << std::endl;
+			}
 		}
+		usleep(10);
 	}
+}
+
+void GPSDecoder::printGGA()
+{
+	// Fix quality:
+	// 		0 = invalid
+	// 		1 = GPS fix (SPS)
+	// 		2 = DGPS fix
+	// 		3 = PPS fix
+	// 		4 = Real Time Kinematic
+	// 		5 = Float RTK
+	// 		6 = estimated (dead reckoning) (2.3 feature)
+	// 		7 = Manual input mode
+	// 		8 = Simulation mode
+  std::cout << "GGAData--------------------"
+	 	<< "\nfixTime:\t" << GGAData.GGAfixTime
+		<< "\nlatitude:\t" << GGAData.GGALatitudeNum
+		<< "\nlongitude:\t" << GGAData.GGALongitudeNum
+		<< "\nGPS fix:\t" << GGAData.gps_fix
+    << "\nSatelinte num:\t" << GGAData.satNum
+		<< "\nHorzDOP:\t" << GGAData.horzDOP
+    << "\nAltitude:\t" << GGAData.alt
+		<< "\nHeightOfGeoid:\t" << GGAData.heightOfGeoid
+    << std::endl;
+
+		// std::ofstream file("GPSOutput.txt", std::ios::app);
+		// if(file.is_open())
+		// {
+		// 	//std::cout << "Opened file successfully" << std::endl;
+		// 	file << "GGAData--------------------"
+		// 	 	<< "\nfixTime:\t" << GGAData.GGAfixTime
+		// 		<< "\nlatitude:\t" << GGAData.GGALatitudeNum
+		// 		<< "\nlongitude:\t" << GGAData.GGALongitudeNum
+		// 		<< "\nGPS fix:\t" << GGAData.gps_fix
+		//     << "\nSatelinte num:\t" << GGAData.satNum
+		// 		<< "\nHorzDOP:\t" << GGAData.horzDOP
+		//     << "\nAltitude:\t" << GGAData.alt
+		// 		<< "\nHeightOfGeoid:\t" << GGAData.heightOfGeoid
+		//     << std::endl;
+		//
+		// 	file.close();
+		// }
+		// else
+		// {
+		// 	std::cout << "Cannot open file" << std::endl;
+		// }
+
+}
+
+void GPSDecoder::printGSA()
+{
+	std::cout << "GSAData--------------------"
+		<< "\nautoSelect: " << GSAData.autoSelect
+		<< "\nfixTime: "<< GSAData.GPSFix << std::endl;
+
+		for(int i=0; i<12; i++)
+			std::cout << "PRN[" << i << "]: " << GSAData.PRN[i] << std::endl;
+
+	std::cout
+		<< "PDOP: " << GSAData.PDOP
+		<< "\nHDOP: "<< GSAData.HDOP
+		<< "\nVDOP: " << GSAData.VDOP
+		<< std::endl;
+}
+
+void GPSDecoder::printGSV()
+{
+
+	std::cout << "GSVData--------------------"
+						<< "\nFullDataSentNum: " 	<< GSVData.fullDataSentNum
+						<< "\nsentence: "					<< GSVData.sentence
+						<< "\nsateliteInView: " 	<< GSVData.sateliteInView
+						<< "\nsatPRNNum: " 				<< GSVData.satPRNNum
+						<< "\nelevation: " 				<< GSVData.elevation
+						<< "\nazimuth: " 					<< GSVData.azimuth
+						<< std::endl;
+}
+
+void GPSDecoder::printGLL()
+{
+	std::cout << "GLLData--------------------"
+						<< "\nGLLLatitude: " 			<< GLLData.GLLLatitude
+						<< "\nGLLLongitude: "			<< GLLData.GLLLongitude
+						<< "\nGLLfixTakenAt: "		<< GLLData.GLLfixTakenAt
+						<< "\ndataActive: "				<< GLLData.dataActive
+						<< std::endl;
+}
+
+void GPSDecoder::printRMC()
+{
+	std::cout << "RMCData--------------------"
+						<< "\nRMCFixTaken: " 			<< RMCData.RMCFixTaken
+						<< "\nRMCStatus: "			<< RMCData.RMCStatus
+						<< "\nRMCLatitude: "		<< RMCData.RMCLatitude
+						<< "\nRMCLongitude: "			<< RMCData.RMCLongitude
+						<< "\nRMCGNDSpeed: "			<< RMCData.RMCGNDSpeed
+						<< "\nRMCTrackAngle: "			<< RMCData.RMCTrackAngle
+						<< "\nRMCMagneticVar: "			<< RMCData.RMCMagneticVar
+						<< std::endl;
+}
+
+void GPSDecoder::printTXT()
+{
+	std::cout << "TXTData--------------------\n";
+
+	for(auto i=TXTData.textVector.begin(); i!=TXTData.textVector.end(); i++)
+		std::cout << "TXTData.textVector: " << *i << std::endl;
+
+	std::cout << "TXTData.textVector.size(): " << TXTData.textVector.size() << std::endl;
+}
+
+void GPSDecoder::printVTG()
+{
+	std::cout << "RMCData--------------------"
+						<< "\nVTGTrueTrack: " 			<< VTGData.VTGTrueTrack
+						<< "\nVTGMagTrack: "			<< VTGData.VTGMagTrack
+						<< "\nVTGGndSpdKnots: "		<< VTGData.VTGGndSpdKnots
+						<< "\nVTGGndSpdkmph: "			<< VTGData.VTGGndSpdkmph
+						<< std::endl;
 }

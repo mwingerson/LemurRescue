@@ -1,14 +1,10 @@
 #pragma once
 
 #include <iostream>
-#include <fstream>
-#include <string>
 #include <cstring>
 #include <vector>
 #include <SerialStream.h>
 
-
-#include <iomanip>
 
 using namespace LibSerial;
 
@@ -44,13 +40,13 @@ struct GGAStruct
 	std::string GGAfixTime;
 	std::string GGALatitude;
 	std::string GGALongitude;
-	float GGALatitudeNum;
-	float GGALongitudeNum;
-	int gps_fix;
-	int satNum;
-	float horzDOP;
-	float alt;
-	float heightOfGeoid;
+	float GGALatitudeNum = 0;
+	float GGALongitudeNum = 0;
+	int gps_fix = 0;
+	int satNum = 0;
+	float horzDOP = 0;
+	float alt = 0;
+	float heightOfGeoid = 0;
 	int empty1;
 	int empty2;
 };
@@ -90,11 +86,11 @@ struct GLLStruct
 struct GSAStruct
 {
 	std::string autoSelect;
-	int GPSFix;
+	int GPSFix = 0;
 	std::vector<int> PRN;
-	float PDOP;
-	float HDOP;
-	float VDOP;
+	float PDOP = 0;
+	float HDOP = 0;
+	float VDOP = 0;
 };
 
 // $GPGSV,2,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75
@@ -114,12 +110,12 @@ struct GSAStruct
 
 struct GSVStruct
 {
-	int fullDataSentNum;
-	int sentence;
-	int sateliteInView;
-	int satPRNNum;
-	int elevation;
-	int azimuth;
+	int fullDataSentNum = 0;
+	int sentence = 0;
+	int sateliteInView = 0;
+	int satPRNNum = 0;
+	int elevation = 0;
+	int azimuth = 0;
 };
 
 // $GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A
@@ -147,6 +143,13 @@ struct RMCStruct
 	std::string RMCMagneticVar;
 };
 
+
+struct TXTStruct
+{
+std::vector<std::string> textVector;
+};
+
+
 // VTG - Velocity made good. The gps receiver may use the LC prefix instead of GP if it is emulating Loran output.
 //
 //   $GPVTG,054.7,T,034.4,M,005.5,N,010.2,K*48
@@ -171,23 +174,29 @@ struct VTGStruct
 class GPSDecoder
 {
 public:
-	GPSDecoder();
+	GPSDecoder(std::string);
 	~GPSDecoder();
 
-	int initDecoder(std::string);
-	int initGPS(std::string);
+	int initDecoder();
+	int initGPS();
 	int initFiles();
 	void closeFile();
-	void stopGPS();
 
-	void printGGAData();
-	void printGSAData();
-	void printGSVData();
-	void printGLLData();
-	void printRMCData();
-	int printKMLData();
+	int GPSSentenceCheck(std::string);
+
+	void printGGA();
+	void printGSA();
+	void printGSV();
+	void printGLL();
+	void printRMC();
+	void printTXT();
+	void printVTG();
+
+	void printKMLtoConsole();
+	int printKMLtoFile();
+
 	void readFFFData(char*);
-	void readGGAData(char*);
+	int readGGAData(char*);
 	void readGSAData(char*);
 	void readGSVData(char*);
 	void readGLLData(char*);
@@ -203,6 +212,7 @@ public:
 	GSVStruct GSVData;
 	GLLStruct GLLData;
 	RMCStruct RMCData;
+	TXTStruct TXTData;
 	VTGStruct VTGData;
 
 	int iterator = 0;
@@ -215,5 +225,8 @@ public:
 private:
 	std::ofstream file;
 
-		SerialStream UARTStream;
+	std::string UARTStr = "/dev/ttyACM0";
+	std::string KMLOutputStr = "KMLOutput.kml";
+
+	SerialStream UARTStream;
 };
