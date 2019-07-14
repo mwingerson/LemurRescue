@@ -57,6 +57,7 @@ int main(int argc, char** argv )
   Mat frame;
 
   HOGDescriptor hog;
+//  hog.setSVMDetector(HOGDescriptor::getDaimlerPeopleDetector());
   hog.setSVMDetector(HOGDescriptor::getDefaultPeopleDetector());
 
   std::vector<Vec3d> rotVec, transVec;
@@ -85,8 +86,8 @@ int main(int argc, char** argv )
   //16:10 aspect ratio resolutions: 1280×800, 1440×900, 1680×1050, 1920×1200, and 2560×1600.
 
 
-  vid.set(CAP_PROP_FRAME_WIDTH, 960);
-  vid.set(CAP_PROP_FRAME_HEIGHT, 720);
+  vid.set(CAP_PROP_FRAME_WIDTH, 1024);
+  vid.set(CAP_PROP_FRAME_HEIGHT, 768);
 
   namedWindow("Webcam", WINDOW_AUTOSIZE);
 
