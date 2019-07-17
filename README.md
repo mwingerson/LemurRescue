@@ -1,3 +1,4 @@
+![Screenshot](screenshot.png)
 # LemurRescue
 
 This program is being developed as a proof of concept payload with the goal to try to automate a Search and Rescue on drones.
